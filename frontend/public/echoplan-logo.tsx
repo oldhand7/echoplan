@@ -3,7 +3,7 @@ import React from "react";
 const EchoPlanLogo: React.FC = () => (
   <div className="flex items-center gap-1">
     {/* Logo Icon */}
-    <EchoPlanIcon className="size-8 p-1 text-secondary rounded-full bg-primary/90" />
+    <EchoPlanIcon className="size-8 p-1 text-secondary rounded-full bg-primary" />
     <div className="flex items-center font-bold text-xl gap-0.5">
       <span className="text-primary">Echo</span>
       <span>Plan</span>
