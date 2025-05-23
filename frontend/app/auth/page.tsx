@@ -3,15 +3,16 @@
 import type React from "react";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mic } from "lucide-react";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
-export default function SignupPage() {
+export default function AuthPage() {
   const [step, setStep] = useState(1);
   const [isBusinessOwner, setIsBusinessOwner] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,27 +40,9 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="flex items-center gap-1 font-bold text-xl"
-            >
-              <span className="text-primary">Echo</span>
-              <span>Plan</span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-muted-foreground hover:text-primary"
-            >
-              Already have an account? Login
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <Header hideCTA/>
+
       <main className="flex-1 py-12">
         <div className="container px-4 md:px-6">
           <div className="mx-auto max-w-md space-y-6">
@@ -231,11 +214,9 @@ export default function SignupPage() {
           </div>
         </div>
       </main>
-      <footer className="w-full border-t bg-background">
-        <div className="container py-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 EchoPlan. All rights reserved.</p>
-        </div>
-      </footer>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

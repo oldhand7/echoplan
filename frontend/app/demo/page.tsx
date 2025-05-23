@@ -27,7 +27,7 @@ export default function DemoPage() {
           </div>
           <div className="flex items-center gap-4">
             <Button asChild>
-              <Link href="/signup">Sign Up Now</Link>
+              <Link href="/auth">Sign Up Now</Link>
             </Button>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function DemoPage() {
                 </p>
               </div>
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/signup">Sign Up Now</Link>
+                <Link href="/auth">Sign Up Now</Link>
               </Button>
             </div>
           </div>

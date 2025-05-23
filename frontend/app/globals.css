@@ -33,51 +33,32 @@
 :root {
   --radius: 0.5rem;
   --background: oklch(0.97 0.01 240);
-  --foreground: oklch(0.3 0.12 256);
+  --foreground: oklch(0.3143 0.091 254.8);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.3 0.12 256);
+  --card-foreground: oklch(0.3143 0.091 254.8);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.3 0.12 256);
-  --primary: oklch(0.65 0.2 260); /* Approx #4F46E5 in OKLCH */
+  --popover-foreground: oklch(0.3143 0.091 254.8);
+  --primary: oklch(0.688 0.169 246.53);
   --primary-foreground: oklch(0.98 0.01 210);
   --secondary: oklch(0.96 0.02 210);
-  --secondary-foreground: oklch(0.3 0.12 256);
+  --secondary-foreground: oklch(0.3143 0.091 254.8);
   --muted: oklch(0.96 0.02 210);
   --muted-foreground: oklch(0.55 0.05 215);
   --accent: oklch(0.96 0.02 210);
-  --accent-foreground: oklch(0.3 0.12 256);
+  --accent-foreground: oklch(0.3143 0.091 254.8);
   --destructive: oklch(0.6 0.25 0);
   --destructive-foreground: oklch(0.98 0.01 210);
   --border: oklch(0.92 0.03 214);
   --input: oklch(0.92 0.03 214);
-  --ring: oklch(0.65 0.2 260);
-}
-
-.dark {
-  --background: oklch(0.3 0.12 256);
-  --foreground: oklch(0.98 0.01 210);
-  --card: oklch(0.3 0.12 256);
-  --card-foreground: oklch(0.98 0.01 210);
-  --popover: oklch(0.3 0.12 256);
-  --popover-foreground: oklch(0.98 0.01 210);
-  --primary: oklch(0.65 0.2 260); /* Same as light mode for consistency */
-  --primary-foreground: oklch(0.98 0.01 210);
-  --secondary: oklch(0.35 0.08 217);
-  --secondary-foreground: oklch(0.98 0.01 210);
-  --muted: oklch(0.35 0.08 217);
-  --muted-foreground: oklch(0.65 0.06 215);
-  --accent: oklch(0.35 0.08 217);
-  --accent-foreground: oklch(0.98 0.01 210);
-  --destructive: oklch(0.5 0.2 0);
-  --destructive-foreground: oklch(0.98 0.01 210);
-  --border: oklch(0.35 0.08 217);
-  --input: oklch(0.35 0.08 217);
-  --ring: oklch(0.65 0.2 260);
+  --ring: oklch(0.688 0.169 246.53);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground;
