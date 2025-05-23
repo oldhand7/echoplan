@@ -67,6 +67,10 @@
     @apply mx-auto px-[var(--container-padding)];
     max-width: var(--container-max-width-2xl);
   }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
 }
 
 @layer utilities {
