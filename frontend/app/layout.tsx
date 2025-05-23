@@ -1,13 +1,14 @@
 import type React from "react";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "EchoPlan - AI Voice Assistant for Business Scheduling",
   description:
-    "Automate your business with EchoPlan's AI voice assistant. Schedule appointments, check orders, and delight customers.",
+    "Automate your business with EchoPlan's AI voice assistant. Schedule appointments,  check orders, and delight customers.",
 };
 
 export default function RootLayout({
@@ -17,7 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className}`}>{children}</body>
+      <body className={`${inter.className}`}>
+        {children} <Toaster position="top-center" richColors />
+      </body>
     </html>
   );
 }

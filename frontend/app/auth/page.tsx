@@ -9,7 +9,7 @@ import Footer from "@/components/footer";
 
 export default function AuthPage() {
   const [currentForm, setCurrentForm] = useState<"login" | "signup" | "verify">(
-    "login"
+    "login",
   );
   const [email, setEmail] = useState("");
   const [isCreateOrg, setIsCreateOrg] = useState(false);
@@ -37,7 +37,7 @@ export default function AuthPage() {
       <Header hideCTA />
 
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto w-full py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto w-full py-28 px-4">
           {currentForm == "login" && (
             <LoginForm
               email={email}

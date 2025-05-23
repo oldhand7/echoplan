@@ -3,7 +3,7 @@ import Link from "next/link";
 
 function Footer() {
   return (
-    <footer className="w-full border-t bg-background">
+    <footer className="w-full border-t">
       <div className="container flex flex-col gap-4 py-6 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-row justify-between items-center">
           <Link href="/">
@@ -66,7 +66,9 @@ function Footer() {
             </Link>
           </div>
         </div>
-        <span className="text-center text-sm text-muted-foreground">© 2025 EchoPlan. All rights reserved.</span>
+        <span className="text-center text-sm text-muted-foreground">
+          © 2025 EchoPlan. All rights reserved.
+        </span>
         <div className="hidden md:flex items-center gap-4">
           <Link href="#" className="text-muted-foreground hover:text-primary">
             <svg

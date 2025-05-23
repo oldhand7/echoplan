@@ -1,14 +1,62 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { ArrowLeft, Building2, Globe, Palette, Upload, Users, Info, Check, X, Loader2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ArrowLeft, Building2, Globe, Palette, Upload, Users, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { toast } from "sonner";
+
+// Zod schema for form validation
+const signupSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  phone: z.string().optional(),
+  createOrg: z.boolean(),
+  orgName: z.string().optional(),
+  orgType: z.string().optional(),
+  orgSize: z.string().optional(),
+  orgLocation: z.string().optional(),
+  orgSlug: z.string().min(3, "URL must be at least 3 characters").optional(),
+  orgBrandColor: z.string().optional(),
+  orgLogo: z.any().optional(),
+}).refine(
+  (data) =>
+    !data.createOrg ||
+    (data.orgName && data.orgType && data.orgSize && data.orgLocation && data.orgSlug),
+  {
+    message: "All organization fields are required when creating an organization",
+    path: ["orgName"],
+  }
+);
 
 interface UserData {
   firstName: string;
@@ -39,7 +87,7 @@ interface SignupFormProps {
   setSlugAvailable: React.Dispatch<React.SetStateAction<boolean | null>>;
   isCheckingSlug: boolean;
   setIsCheckingSlug: React.Dispatch<React.SetStateAction<boolean>>;
-  setCurrentForm: (currentForm : "login" | "signup" | "verify") => void;
+  setCurrentForm: (currentForm: "login" | "signup" | "verify") => void;
 }
 
 export default function SignupForm({
@@ -57,6 +105,28 @@ export default function SignupForm({
   setIsCheckingSlug,
   setCurrentForm,
 }: SignupFormProps) {
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // Initialize form with Zod schema
+  const form = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      phone: userData.phone,
+      createOrg: isCreateOrg,
+      orgName: orgData.name,
+      orgType: orgData.type,
+      orgSize: orgData.size,
+      orgLocation: orgData.location,
+      orgSlug: slug,
+      orgBrandColor: orgData.brandColor || "#3b82f6",
+      orgLogo: null,
+    },
+  });
+
+  // Handle slug generation
   useEffect(() => {
     if (orgData.name && isCreateOrg) {
       const generatedSlug = orgData.name
@@ -66,9 +136,11 @@ export default function SignupForm({
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
       setSlug(generatedSlug);
+      form.setValue("orgSlug", generatedSlug);
     }
-  }, [orgData.name, isCreateOrg, setSlug]);
+  }, [orgData.name, isCreateOrg, setSlug, form]);
 
+  // Simulate slug availability check
   useEffect(() => {
     if (slug && slug.length >= 3) {
       setIsCheckingSlug(true);
@@ -82,367 +154,469 @@ export default function SignupForm({
     }
   }, [slug, setSlugAvailable, setIsCheckingSlug]);
 
+  // Handle logo preview
+  useEffect(() => {
+    if (orgData.logo) {
+      const url = URL.createObjectURL(orgData.logo);
+      setLogoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setLogoPreview(null);
+    }
+  }, [orgData.logo]);
+
+  // Handle form submission
+  const onSubmit = (data: z.infer<typeof signupSchema>) => {
+    setUserData({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone || "",
+    });
+    if (data.createOrg) {
+      setOrgData({
+        name: data.orgName || "",
+        type: data.orgType || "",
+        size: data.orgSize || "",
+        location: data.orgLocation || "",
+        brandColor: data.orgBrandColor || "#3b82f6",
+        logo: data.orgLogo || null,
+      });
+    }
+    setIsCreateOrg(data.createOrg);
+    toast.success("Account Created", {
+      description: "Proceeding to verification...",
+      className: "bg-primary text-secondary",
+    });
+    setTimeout(() => {
+      setCurrentForm("verify");
+    }, 1000);
+  };
+
+  // Handle logo upload
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File Too Large", {
+          description: "Logo must be under 5MB",
+          className: "bg-destructive text-destructive-foreground",
+        });
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        toast.error("Invalid File Type", {
+          description: "Please upload an image file",
+          className: "bg-destructive text-destructive-foreground",
+        });
+        return;
+      }
+      setOrgData({ ...orgData, logo: file });
+      form.setValue("orgLogo", file);
+    }
+  };
+
   return (
-    <Card className="w-full max-w-4xl mx-auto border-gray-200">
+    <Card className="w-full max-w-3xl mx-auto">
       <CardHeader className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 9.143M15 3v4m-2-2h4" />
-          </svg>
+        <div className="mx-auto inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg">
+          <Users className="w-8 h-8 text-secondary" />
         </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-          Create your account
-        </CardTitle>
+        <CardTitle className="text-3xl font-bold">Create Your Account</CardTitle>
         <CardDescription>
-          Join thousands of users building better experiences
+          Join us to start building better experiences
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setCurrentForm("verify");
-          }}
-          className="space-y-8"
-        >
-          <Card className="bg-white border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Users className="w-5 h-5 text-emerald-600" />
-                Personal Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={userData.firstName}
-                  onChange={(e) =>
-                    setUserData({ ...userData, firstName: e.target.value })
-                  }
-                  placeholder="John"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={userData.lastName}
-                  onChange={(e) =>
-                    setUserData({ ...userData, lastName: e.target.value })
-                  }
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={userData.email}
-                  onChange={(e) =>
-                    setUserData({ ...userData, email: e.target.value })
-                  }
-                  placeholder="john@company.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={userData.phone}
-                  onChange={(e) =>
-                    setUserData({ ...userData, phone: e.target.value })
-                  }
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Checkbox
-                  id="createOrg"
-                  checked={isCreateOrg}
-                  onCheckedChange={(checked) => setIsCreateOrg(!!checked)}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="createOrg"
-                      className="text-lg font-semibold text-indigo-900 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-5 h-5" />
-                        Create an organization
-                      </div>
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-indigo-600" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Perfect for businesses, teams, or communities
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-indigo-700 mt-1">
-                    Set up your organization to collaborate with your team and
-                    customize your experience.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {isCreateOrg && (
-            <Card className="bg-white border-gray-200 shadow-sm animate-in slide-in-from-top duration-300">
-              <CardHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card className="border-none shadow-none">
+              <CardHeader className="px-0">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-indigo-600" />
-                  Organization Details
+                  <Users className="w-5 h-5 text-primary" />
+                  Personal Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="orgName">Organization Name</Label>
-                    <Input
-                      id="orgName"
-                      type="text"
-                      value={orgData.name}
-                      onChange={(e) =>
-                        setOrgData({ ...orgData, name: e.target.value })
-                      }
-                      placeholder="Prime Barbers"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="orgType">Organization Type</Label>
-                    <Select
-                      value={orgData.type}
-                      onValueChange={(value) =>
-                        setOrgData({ ...orgData, type: value })
-                      }
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="nonprofit">Non-profit</SelectItem>
-                        <SelectItem value="education">Education</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="government">Government</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="orgSize">Size</Label>
-                      <Select
-                        value={orgData.size}
-                        onValueChange={(value) =>
-                          setOrgData({ ...orgData, size: value })
-                        }
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1-10">1-10 people</SelectItem>
-                          <SelectItem value="11-50">11-50 people</SelectItem>
-                          <SelectItem value="51-200">51-200 people</SelectItem>
-                          <SelectItem value="201-1000">201-1000 people</SelectItem>
-                          <SelectItem value="1000+">1000+ people</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="orgLocation">Location</Label>
-                      <Input
-                        id="orgLocation"
-                        type="text"
-                        value={orgData.location}
-                        onChange={(e) =>
-                          setOrgData({ ...orgData, location: e.target.value })
-                        }
-                        placeholder="New York, NY"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Globe className="w-4 h-4" />
-                      Organization URL
-                    </Label>
-                    <div className="flex items-center border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500">
-                      <span className="px-4 py-3 text-gray-500 bg-gray-50 rounded-l-xl border-r">
-                        echoplan.com/
-                      </span>
-                      <Input
-                        type="text"
-                        value={slug}
-                        onChange={(e) =>
-                          setSlug(
-                            e.target.value
-                              .toLowerCase()
-                              .replace(/[^a-z0-9-]/g, "")
-                          )
-                        }
-                        className="flex-1 border-none focus:ring-0"
-                        placeholder="prime-barbers"
-                        required
-                      />
-                      <div className="px-3">
-                        {isCheckingSlug ? (
-                          <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                        ) : slugAvailable === true ? (
-                          <Check className="w-5 h-5 text-emerald-500" />
-                        ) : slugAvailable === false ? (
-                          <X className="w-5 h-5 text-red-500" />
-                        ) : null}
-                      </div>
-                    </div>
-                    {slugAvailable === false && (
-                      <p className="text-sm text-red-600 flex items-center gap-1">
-                        <X className="w-4 h-4" />
-                        This URL is not available. Try a different one.
-                      </p>
-                    )}
-                    {slugAvailable === true && (
-                      <p className="text-sm text-emerald-600 flex items-center gap-1">
-                        <Check className="w-4 h-4" />
-                        Great! This URL is available.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label className="flex items-center gap-2">
-                      <Palette className="w-4 h-4" />
-                      Brand Color
-                    </Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        type="color"
-                        value={orgData.brandColor}
-                        onChange={(e) =>
-                          setOrgData({ ...orgData, brandColor: e.target.value })
-                        }
-                        className="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer"
-                      />
-                      <div className="grid grid-cols-6 gap-2">
-                        {[
-                          "#6366f1",
-                          "#10b981",
-                          "#f59e0b",
-                          "#ef4444",
-                          "#8b5cf6",
-                          "#06b6d4",
-                        ].map((color) => (
-                          <Button
-                            key={color}
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                              setOrgData({ ...orgData, brandColor: color })
-                            }
-                            className="w-8 h-8 p-0 rounded-lg border-2 hover:scale-110 transition-transform"
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Upload className="w-4 h-4" />
-                      Logo (Optional)
-                    </Label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-indigo-300 transition-colors">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">
-                        Drag & drop your logo here, or click to browse
-                      </p>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          setOrgData({
-                            ...orgData,
-                            logo: e.target.files ? e.target.files[0] : null,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lg:pl-8">
-                  <div className="sticky top-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Preview
-                    </h3>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
-                      <div
-                        className="rounded-xl p-6 text-center shadow-lg"
-                        style={{
-                          backgroundColor: orgData.brandColor + "15",
-                          borderColor: orgData.brandColor + "30",
-                        }}
-                      >
-                        <div
-                          className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl shadow-lg"
-                          style={{ backgroundColor: orgData.brandColor }}
-                        >
-                          {orgData.name
-                            ? orgData.name.substring(0, 2).toUpperCase()
-                            : "YO"}
-                        </div>
-                        <h4 className="text-xl font-bold text-gray-900 mb-2">
-                          {orgData.name || "Your Organization"}
-                        </h4>
-                        <p className="text-gray-600 mb-4">
-                          {orgData.type
-                            ? orgData.type.charAt(0).toUpperCase() +
-                              orgData.type.slice(1)
-                            : "Organization"}
-                        </p>
-                        <div className="text-sm text-gray-500">
-                          echoplan.com/{slug || "your-organization"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <CardContent className="px-0 grid md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@company.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Phone (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="+1 (555) 123-4567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
-          )}
-        </form>
+
+            <FormField
+              control={form.control}
+              name="createOrg"
+              render={({ field }) => (
+                <FormItem className="flex items-start gap-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-1"
+                    />
+                  </FormControl>
+                  <div className="flex-1">
+                    <FormLabel className="text-lg font-semibold flex items-center gap-2 cursor-pointer">
+                      <Building2 className="w-5 h-5" />
+                      Create an organization
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Set up your organization to collaborate with your team and customize your experience.
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("createOrg") && (
+              <Card className="border-none shadow-none">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-primary" />
+                    Organization Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 grid lg:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="orgName"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Organization Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Prime Barbers" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="orgType"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Organization Type</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="business">Business</SelectItem>
+                                <SelectItem value="nonprofit">Non-profit</SelectItem>
+                                <SelectItem value="education">Education</SelectItem>
+                                <SelectItem value="healthcare">Healthcare</SelectItem>
+                                <SelectItem value="government">Government</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="orgSize"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel>Size</FormLabel>
+                            <FormControl>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1-10">1-10 people</SelectItem>
+                                  <SelectItem value="11-50">11-50 people</SelectItem>
+                                  <SelectItem value="51-200">51-200 people</SelectItem>
+                                  <SelectItem value="201-1000">201-1000 people</SelectItem>
+                                  <SelectItem value="1000+">1000+ people</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="orgLocation"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                              <Input placeholder="New York, NY" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="orgSlug"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Organization URL
+                          </FormLabel>
+                          <FormControl>
+                            <div className="flex items-center border border-muted rounded-lg focus-within:ring-2 focus-within:ring-primary">
+                              <span className="px-3 py-2 text-muted-foreground bg-muted rounded-l-lg">
+                                echoplan.com/
+                              </span>
+                              <Input
+                                {...field}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                    .toLowerCase()
+                                    .replace(/[^a-z0-9-]/g, "");
+                                  field.onChange(value);
+                                  setSlug(value);
+                                }}
+                                className="border-none focus:ring-0"
+                                placeholder="prime-barbers"
+                              />
+                              <div className="px-3">
+                                {isCheckingSlug ? (
+                                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                                ) : slugAvailable === true ? (
+                                  <Check className="w-5 h-5 text-primary" />
+                                ) : slugAvailable === false ? (
+                                  <X className="w-5 h-5 text-destructive" />
+                                ) : null}
+                              </div>
+                            </div>
+                          </FormControl>
+                          {slugAvailable === false && (
+                            <p className="text-sm text-destructive flex items-center gap-1">
+                              <X className="w-4 h-4" />
+                              This URL is not available. Try a different one.
+                            </p>
+                          )}
+                          {slugAvailable === true && (
+                            <p className="text-sm text-primary flex items-center gap-1">
+                              <Check className="w-4 h-4" />
+                              Great! This URL is available.
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="orgBrandColor"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="flex items-center gap-2">
+                            <Palette className="w-4 h-4" />
+                            Brand Color
+                          </FormLabel>
+                          <FormControl>
+                            <div className="flex flex-col gap-4">
+                              <div className="grid grid-cols-6 gap-2">
+                                {[
+                                  "#3b82f6", // blue-500
+                                  "#10b981", // green-500
+                                  "#f59e0b", // yellow-500
+                                  "#ef4444", // red-500
+                                  "#8b5cf6", // purple-500
+                                  "#06b6d4", // cyan-500
+                                ].map((color) => (
+                                  <Button
+                                    key={color}
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                      field.onChange(color);
+                                      setOrgData({ ...orgData, brandColor: color });
+                                    }}
+                                    className={`w-10 h-10 p-0 rounded-full border-2 transition-transform duration-200 hover:scale-110 ${
+                                      field.value === color ? "ring-2 ring-primary" : ""
+                                    }`}
+                                    style={{ backgroundColor: color }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="#3b82f6"
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    setOrgData({ ...orgData, brandColor: e.target.value });
+                                  }}
+                                  className="w-24"
+                                />
+                                <div
+                                  className="w-10 h-10 rounded-lg border border-muted"
+                                  style={{ backgroundColor: field.value }}
+                                />
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="orgLogo"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="flex items-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            Logo (Optional)
+                          </FormLabel>
+                          <FormControl>
+                            <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
+                              {logoPreview ? (
+                                <div className="relative">
+                                  <img
+                                    src={logoPreview}
+                                    alt="Logo Preview"
+                                    className="max-h-24 mx-auto mb-2 object-contain"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      setOrgData({ ...orgData, logo: null });
+                                      field.onChange(null);
+                                    }}
+                                    className="absolute top-0 right-0"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <>
+                                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                  <p className="text-sm text-muted-foreground">
+                                    Drag & drop your logo here, or click to browse (max 5MB)
+                                  </p>
+                                </>
+                              )}
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleLogoChange}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="lg:pl-8">
+                    <div className="sticky top-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-4">
+                        Preview
+                      </h3>
+                      <div className="bg-muted rounded-lg p-6 border border-muted-foreground/20">
+                        <div className="text-center">
+                          {logoPreview ? (
+                            <img
+                              src={logoPreview}
+                              alt="Logo Preview"
+                              className="w-16 h-16 rounded-full mx-auto mb-4 object-contain"
+                            />
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl"
+                              style={{ backgroundColor: orgData.brandColor || "#3b82f6" }}
+                            >
+                              {orgData.name
+                                ? orgData.name.substring(0, 2).toUpperCase()
+                                : "YO"}
+                            </div>
+                          )}
+                          <h4 className="text-lg font-semibold text-foreground mb-2">
+                            {orgData.name || "Your Organization"}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {orgData.type
+                              ? orgData.type.charAt(0).toUpperCase() + orgData.type.slice(1)
+                              : "Organization"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            echoplan.com/{slug || "your-organization"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </form>
+        </Form>
       </CardContent>
 
       <CardFooter className="flex flex-col gap-4">
@@ -450,25 +624,26 @@ export default function SignupForm({
           <Button
             variant="outline"
             onClick={() => setCurrentForm("login")}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:scale-[1.02] transition-transform duration-200"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Login
           </Button>
           <Button
             type="submit"
-            className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="flex-1 transition-all duration-200 hover:scale-[1.02]"
+            disabled={!form.formState.isValid}
+            onClick={form.handleSubmit(onSubmit)}
           >
-            Create Account
+            Next
           </Button>
         </div>
-
-        <div className="text-center">
-          <span className="text-gray-600">Already have an account? </span>
+        <div className="text-center text-sm">
+          <span className="text-muted-foreground">Already have an account? </span>
           <Button
             variant="link"
             onClick={() => setCurrentForm("login")}
-            className="text-emerald-600 hover:text-emerald-700 font-semibold"
+            className="font-semibold text-primary hover:text-primary/80"
           >
             Sign in
           </Button>
