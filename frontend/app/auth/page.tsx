@@ -37,7 +37,7 @@ export default function AuthPage() {
       <Header hideCTA />
 
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto w-full py-28 px-4">
+        <div className="max-w-7xl mx-auto w-full pt-24 px-4">
           {currentForm == "login" && (
             <LoginForm
               email={email}

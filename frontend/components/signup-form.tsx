@@ -7,7 +7,6 @@ import * as z from "zod";
 import { ArrowLeft, Building2, Globe, Palette, Upload, Users, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -33,6 +32,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
+import Image from "next/image";
 
 // Zod schema for form validation
 const signupSchema = z.object({
@@ -535,7 +535,7 @@ export default function SignupForm({
                             <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
                               {logoPreview ? (
                                 <div className="relative">
-                                  <img
+                                  <Image
                                     src={logoPreview}
                                     alt="Logo Preview"
                                     className="max-h-24 mx-auto mb-2 object-contain"
@@ -582,7 +582,7 @@ export default function SignupForm({
                       <div className="bg-muted rounded-lg p-6 border border-muted-foreground/20">
                         <div className="text-center">
                           {logoPreview ? (
-                            <img
+                            <Image
                               src={logoPreview}
                               alt="Logo Preview"
                               className="w-16 h-16 rounded-full mx-auto mb-4 object-contain"

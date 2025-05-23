@@ -57,6 +57,7 @@ export default function VerificationForm({
 
   // Handle form submission
   const onSubmit = (data: z.infer<typeof verificationSchema>) => {
+    console.log(`Verifying with code: ${data.code}`);
     toast.success("Verification Successful", {
       description: "Redirecting to dashboard...",
       className: "bg-green-500 text-white",
@@ -203,7 +204,7 @@ export default function VerificationForm({
       <CardFooter className="flex flex-col gap-4">
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-1">
-            Didn't receive the code?
+            Didn&apos;t receive the code?
           </p>
           <Button
             variant="ghost"
