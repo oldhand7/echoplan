@@ -35,7 +35,7 @@ export default function Header({
               Features
             </Link>
             <Link
-              href="#demo"
+              href="/demo"
               className="text-sm font-medium transition-colors hover:text-primary"
             >
               Demo

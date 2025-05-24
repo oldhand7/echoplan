@@ -86,13 +86,15 @@ export default function TestimonialCarousel() {
   return (
     <Carousel
       opts={{
-        align: "start",
-        loop: true,
+      align: "start",
+      loop: true,
+      dragFree: true,
+      slidesToScroll: 1
       }}
       plugins={[
-        Autoplay({
-          delay: 2500,
-        }),
+      Autoplay({
+        delay: 3000,
+      }),
       ]}
       className="w-full mt-12"
     >
