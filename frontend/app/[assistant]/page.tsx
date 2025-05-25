@@ -4,41 +4,10 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { CalendarPlus, Clock, Briefcase, PhoneCall } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/layout/header";
-import RippleButton from "@/components/assistant/ripple-button";
+import RippleButton from "@/components/assistant/assistant-control";
 import TranscriptionDisplay from "@/components/assistant/transcription-display";
-import QuickActionsFooter from "@/components/assistant/quick-action-footer";
-import {
-  ConversationState,
-  QuickAction,
-  RippleConfig,
-} from "@/types/assistant";
-
-const rippleConfig: Record<string, RippleConfig> = {
-  inactive: {
-    base: "bg-background border-primary/40 hover:border-primary/70",
-    pulseEffect: "",
-    label: "Click to Start",
-    textColor: "text-primary",
-  },
-  initializing: {
-    base: "bg-secondary/20 border-secondary",
-    pulseEffect: "animate-pulse-strong",
-    label: "Initializing...",
-    textColor: "text-secondary-foreground",
-  },
-  listening: {
-    base: "bg-primary/20 border-primary",
-    pulseEffect: "animate-pulse-gentle",
-    label: "Listening...",
-    textColor: "text-primary",
-  },
-  speaking: {
-    base: "bg-accent/20 border-accent",
-    pulseEffect: "animate-pulse-strong",
-    label: "AI Speaking...",
-    textColor: "text-accent-foreground",
-  },
-};
+import QuickActions from "@/components/assistant/quick-action";
+import { ConversationState, QuickAction } from "@/types/assistant";
 
 const quickActions: QuickAction[] = [
   {
@@ -74,6 +43,7 @@ export default function AssistantPage() {
       "Welcome! Click the central orb to begin your voice-first scheduling session.",
     userMessage: "",
     bookingDetails: { name: null, email: null, time: null },
+    isSessionActive: false,
   });
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [audioOutputEnabled] = useState(true);
@@ -145,7 +115,7 @@ export default function AssistantPage() {
 
       speechSynthesis.speak(utterance);
     },
-    [audioOutputEnabled, isSessionActive]
+    [audioOutputEnabled, isSessionActive],
   );
 
   const processUserSpeech = useCallback(
@@ -268,16 +238,15 @@ export default function AssistantPage() {
       }));
       speakText(aiResponse);
     },
-    [speakText]
+    [speakText],
   );
 
   const initializeSpeechRecognition = useCallback(() => {
     const SpeechRecognitionAPI =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognitionAPI) {
       speakText(
-        "Speech recognition is not supported in your browser. Please try a different browser like Chrome or Edge."
+        "Speech recognition is not supported in your browser. Please try a different browser like Chrome or Edge.",
       );
       setConversation((prev) => ({ ...prev, phase: "inactive" }));
       setIsSessionActive(false);
@@ -296,7 +265,7 @@ export default function AssistantPage() {
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = "en-US";
 
-    recognitionRef.current.onresult = (event: any) => {
+    recognitionRef.current.onresult = (event) => {
       let interimTranscript = "";
       let finalTranscript = "";
 
@@ -333,7 +302,7 @@ export default function AssistantPage() {
     recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error("Speech recognition error:", event.error, event.message);
       let errorMsg = "An unexpected speech error occurred.";
-      if (event.error === "no-speech") {
+      if ((event.error as string) === "no-speech") {
         return;
       } else if (event.error === "audio-capture") {
         errorMsg = "Microphone issue. Please check connection and permissions.";
@@ -349,7 +318,7 @@ export default function AssistantPage() {
         }));
         return;
       }
-      if (event.error !== "no-speech") {
+      if ((event.error as string) !== "no-speech") {
         speakText(errorMsg, () => {
           setConversation((prev) => ({
             ...prev,
@@ -386,26 +355,40 @@ export default function AssistantPage() {
           autoGainControl: true,
         },
       });
-      setIsSessionActive(true);
       const initialized = initializeSpeechRecognition();
       if (initialized && recognitionRef.current) {
+        setIsSessionActive(true); // Set active only if fully initialized
         recognitionRef.current.start();
         speakText(
           "Welcome! I'm ready to assist. How can I help you schedule today?",
           () => {
             setConversation((prev) => ({ ...prev, phase: "listening" }));
-          }
+          },
         );
       } else {
-        setIsSessionActive(false);
+        // Initialization failed or recognitionRef is not available.
+        stream.getTracks().forEach((track) => track.stop()); // Use the stream by stopping its tracks
+        setIsSessionActive(false); // Ensure session is not active
+
+        // If initializeSpeechRecognition returned false, it should have handled user feedback.
+        // Provide a fallback message if the phase still indicates 'initializing',
+        // meaning initializeSpeechRecognition didn't set a specific error message and inactive phase.
+        if (conversationRef.current.phase === "initializing") {
+          setConversation((prev) => ({
+            ...prev,
+            phase: "inactive",
+            currentResponse:
+              "Voice service initialization failed. Please try again.",
+          }));
+        }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Microphone access error:", error);
       let message = "Microphone access required. Please grant permission.";
-      if (error.name === "NotAllowedError") {
+      if (error instanceof Error && error.name === "NotAllowedError") {
         message =
           "Microphone access denied. Please enable it in your browser settings.";
-      } else if (error.name === "NotFoundError") {
+      } else if (error instanceof Error && error.name === "NotFoundError") {
         message = "No microphone found. Please connect one and try again.";
       }
       setConversation((prev) => ({
@@ -445,8 +428,9 @@ export default function AssistantPage() {
         recognitionRef.current?.start();
       }
     } else {
-      initializeSpeechRecognition();
-      recognitionRef.current?.start();
+      toast.error(
+        "Speech recognition not initialized. Please start a new session.",
+      );
     }
   };
 
@@ -473,7 +457,7 @@ export default function AssistantPage() {
   const handleQuickAction = (action: QuickAction) => {
     if (!isSessionActive) {
       toast.info(
-        "Please start or resume the voice session to use quick actions."
+        "Please start or resume the voice session to use quick actions.",
       );
       return;
     }
@@ -492,26 +476,22 @@ export default function AssistantPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="container mx-auto flex-grow flex flex-col items-center justify-center px-4 pt-8 pb-20 md:pb-8 relative">
+      <main className="flex flex-1 item-center justify-center">
         <div className="relative flex flex-col items-center justify-center space-y-6 w-full">
           <RippleButton
             phase={conversation.phase}
-            isSessionActive={isSessionActive}
+            isActive={isSessionActive}
             currentResponse={conversation.currentResponse}
             onClick={handleCentralButtonClick}
-            rippleConfig={rippleConfig}
           />
-          <TranscriptionDisplay
-            conversation={conversation}
-            isSessionActive={isSessionActive}
-          />
+          <TranscriptionDisplay conversation={conversation} />
         </div>
       </main>
-      <QuickActionsFooter
+      <QuickActions
         quickActions={quickActions}
         isSessionActive={isSessionActive}
         currentResponse={conversation.currentResponse}
-        handleQuickAction={handleQuickAction}
+        onQuickAction={handleQuickAction}
       />
     </div>
   );

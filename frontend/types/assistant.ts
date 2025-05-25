@@ -9,6 +9,7 @@ export interface ConversationState {
     email: string | null;
     time: string | null;
   };
+  isSessionActive: boolean;
 }
 
 export interface QuickAction {
@@ -16,11 +17,4 @@ export interface QuickAction {
   label: string;
   icon: React.ReactNode;
   prompt: string;
-}
-
-export interface RippleConfig {
-  base: string;
-  pulseEffect: string;
-  label: string;
-  textColor: string;
 }
