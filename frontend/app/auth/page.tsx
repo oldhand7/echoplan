@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import LoginForm from "@/components/login-form";
-import SignupForm from "@/components/signup-form";
-import VerificationForm from "@/components/verification-form";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import LoginForm from "@/components/auth/login-form";
+import SignupForm from "@/components/auth/signup-form";
+import VerificationForm from "@/components/auth/verification-form";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 
 export default function AuthPage() {
   const [currentForm, setCurrentForm] = useState<"login" | "signup" | "verify">(

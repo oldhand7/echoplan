@@ -70,7 +70,7 @@ export default function VerificationForm({
   // Handle paste event to fill code inputs
   const handlePaste = (
     e: React.ClipboardEvent,
-    setValue: (value: string) => void
+    setValue: (value: string) => void,
   ) => {
     const pastedData = e.clipboardData.getData("text").trim();
     if (/^[a-zA-Z0-9]{6}$/.test(pastedData)) {
@@ -152,7 +152,7 @@ export default function VerificationForm({
                             onChange={(e) => {
                               const newValue = e.target.value.replace(
                                 /[^a-zA-Z0-9]/g,
-                                ""
+                                "",
                               );
                               if (newValue.length <= 1) {
                                 const currentCode = field.value || "";

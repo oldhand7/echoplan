@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Building2, Calendar, MessageSquare, ShieldCheck } from "lucide-react";
-import Header from "@/components/header";
+import Header from "@/components/layout/header";
 import DemoPreview from "@/components/demo-preview";
 import TestimonialCarousel from "@/components/testimonial-carousel";
-import Footer from "@/components/footer";
+import Footer from "@/components/layout/footer";
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header */}
+    <div className="flex flex-col min-h-screen">
       <Header showNav />
 
       <main className="flex-1">

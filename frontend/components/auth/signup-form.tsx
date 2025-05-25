@@ -4,7 +4,17 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Building2, Globe, Palette, Upload, Users, Check, X, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Globe,
+  Palette,
+  Upload,
+  Users,
+  Check,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,28 +45,38 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 // Zod schema for form validation
-const signupSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-  phone: z.string().optional(),
-  createOrg: z.boolean(),
-  orgName: z.string().optional(),
-  orgType: z.string().optional(),
-  orgSize: z.string().optional(),
-  orgLocation: z.string().optional(),
-  orgSlug: z.string().min(3, "URL must be at least 3 characters").optional(),
-  orgBrandColor: z.string().optional(),
-  orgLogo: z.any().optional(),
-}).refine(
-  (data) =>
-    !data.createOrg ||
-    (data.orgName && data.orgType && data.orgSize && data.orgLocation && data.orgSlug),
-  {
-    message: "All organization fields are required when creating an organization",
-    path: ["orgName"],
-  }
-);
+const signupSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Invalid email address"),
+    phone: z.string().optional(),
+    createOrg: z.boolean(),
+    orgName: z.string().optional(),
+    orgType: z.string().optional(),
+    orgSize: z.string().optional(),
+    orgLocation: z.string().optional(),
+    orgSlug: z.string().min(3, "URL must be at least 3 characters").optional(),
+    orgBrandColor: z.string().optional(),
+    orgLogo: z.any().optional(),
+  })
+  .refine(
+    (data) =>
+      !data.createOrg ||
+      (data.orgName &&
+        data.orgType &&
+        data.orgSize &&
+        data.orgLocation &&
+        data.orgSlug),
+    {
+      message:
+        "All organization fields are required when creating an organization",
+      path: ["orgName"],
+    },
+  );
 
 interface UserData {
   firstName: string;
@@ -222,7 +242,9 @@ export default function SignupForm({
         <div className="mx-auto inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg">
           <Users className="w-8 h-8 text-secondary" />
         </div>
-        <CardTitle className="text-3xl font-bold">Create Your Account</CardTitle>
+        <CardTitle className="text-3xl font-bold">
+          Create Your Account
+        </CardTitle>
         <CardDescription>
           Join us to start building better experiences
         </CardDescription>
@@ -272,7 +294,11 @@ export default function SignupForm({
                     <FormItem className="space-y-2">
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@company.com" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="john@company.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -285,7 +311,11 @@ export default function SignupForm({
                     <FormItem className="space-y-2">
                       <FormLabel>Phone (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="tel" placeholder="+1 (555) 123-4567" {...field} />
+                        <Input
+                          type="tel"
+                          placeholder="+1 (555) 123-4567"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -312,7 +342,8 @@ export default function SignupForm({
                       Create an organization
                     </FormLabel>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Set up your organization to collaborate with your team and customize your experience.
+                      Set up your organization to collaborate with your team and
+                      customize your experience.
                     </p>
                   </div>
                 </FormItem>
@@ -357,11 +388,21 @@ export default function SignupForm({
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="business">Business</SelectItem>
-                                <SelectItem value="nonprofit">Non-profit</SelectItem>
-                                <SelectItem value="education">Education</SelectItem>
-                                <SelectItem value="healthcare">Healthcare</SelectItem>
-                                <SelectItem value="government">Government</SelectItem>
+                                <SelectItem value="business">
+                                  Business
+                                </SelectItem>
+                                <SelectItem value="nonprofit">
+                                  Non-profit
+                                </SelectItem>
+                                <SelectItem value="education">
+                                  Education
+                                </SelectItem>
+                                <SelectItem value="healthcare">
+                                  Healthcare
+                                </SelectItem>
+                                <SelectItem value="government">
+                                  Government
+                                </SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
                             </Select>
@@ -386,11 +427,21 @@ export default function SignupForm({
                                   <SelectValue placeholder="Select size" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="1-10">1-10 people</SelectItem>
-                                  <SelectItem value="11-50">11-50 people</SelectItem>
-                                  <SelectItem value="51-200">51-200 people</SelectItem>
-                                  <SelectItem value="201-1000">201-1000 people</SelectItem>
-                                  <SelectItem value="1000+">1000+ people</SelectItem>
+                                  <SelectItem value="1-10">
+                                    1-10 people
+                                  </SelectItem>
+                                  <SelectItem value="11-50">
+                                    11-50 people
+                                  </SelectItem>
+                                  <SelectItem value="51-200">
+                                    51-200 people
+                                  </SelectItem>
+                                  <SelectItem value="201-1000">
+                                    201-1000 people
+                                  </SelectItem>
+                                  <SelectItem value="1000+">
+                                    1000+ people
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -491,10 +542,15 @@ export default function SignupForm({
                                     variant="outline"
                                     onClick={() => {
                                       field.onChange(color);
-                                      setOrgData({ ...orgData, brandColor: color });
+                                      setOrgData({
+                                        ...orgData,
+                                        brandColor: color,
+                                      });
                                     }}
                                     className={`w-10 h-10 p-0 rounded-full border-2 transition-transform duration-200 hover:scale-110 ${
-                                      field.value === color ? "ring-2 ring-primary" : ""
+                                      field.value === color
+                                        ? "ring-2 ring-primary"
+                                        : ""
                                     }`}
                                     style={{ backgroundColor: color }}
                                   />
@@ -507,7 +563,10 @@ export default function SignupForm({
                                   value={field.value}
                                   onChange={(e) => {
                                     field.onChange(e.target.value);
-                                    setOrgData({ ...orgData, brandColor: e.target.value });
+                                    setOrgData({
+                                      ...orgData,
+                                      brandColor: e.target.value,
+                                    });
                                   }}
                                   className="w-24"
                                 />
@@ -557,7 +616,8 @@ export default function SignupForm({
                                 <>
                                   <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                   <p className="text-sm text-muted-foreground">
-                                    Drag & drop your logo here, or click to browse (max 5MB)
+                                    Drag & drop your logo here, or click to
+                                    browse (max 5MB)
                                   </p>
                                 </>
                               )}
@@ -590,7 +650,10 @@ export default function SignupForm({
                           ) : (
                             <div
                               className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl"
-                              style={{ backgroundColor: orgData.brandColor || "#3b82f6" }}
+                              style={{
+                                backgroundColor:
+                                  orgData.brandColor || "#3b82f6",
+                              }}
                             >
                               {orgData.name
                                 ? orgData.name.substring(0, 2).toUpperCase()
@@ -602,7 +665,8 @@ export default function SignupForm({
                           </h4>
                           <p className="text-sm text-muted-foreground mb-4">
                             {orgData.type
-                              ? orgData.type.charAt(0).toUpperCase() + orgData.type.slice(1)
+                              ? orgData.type.charAt(0).toUpperCase() +
+                                orgData.type.slice(1)
                               : "Organization"}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -639,7 +703,9 @@ export default function SignupForm({
           </Button>
         </div>
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Already have an account? </span>
+          <span className="text-muted-foreground">
+            Already have an account?{" "}
+          </span>
           <Button
             variant="link"
             onClick={() => setCurrentForm("login")}

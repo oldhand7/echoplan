@@ -51,6 +51,9 @@
   --border: oklch(0.89 0.02 240);
   --input: oklch(0.89 0.02 240);
   --ring: oklch(0.688 0.169 246.53);
+  --color-primary-rgb: 78, 100, 255; /* Approximate RGB for the OKLCH primary */
+  --color-primary-alpha-mid: rgba(78, 100, 255, 0.4);
+  --color-primary-alpha-zero: rgba(78, 100, 255, 0);
 }
 
 @layer base {
@@ -80,8 +83,21 @@
   .accordion-up {
     animation: accordion-up 0.2s ease-out;
   }
+
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2.5s infinite ease-in-out;
+  }
+
+  .animate-pulse-strong {
+    animation: pulse-strong 1.8s infinite ease-in-out;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
 }
 
+/* Existing Keyframes */
 @keyframes accordion-down {
   from {
     height: 0;
@@ -97,5 +113,40 @@
   }
   to {
     height: 0;
+  }
+}
+
+@keyframes pulse-gentle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.4;
+  }
+}
+
+@keyframes pulse-strong {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+    box-shadow: 0 0 0 0px currentColor;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+    box-shadow: 0 0 10px 10px transparent;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
